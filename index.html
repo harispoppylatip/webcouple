@@ -34,7 +34,7 @@
 
     /* Stream Memories */
     .memory-row { display: flex; gap: 1rem; white-space: nowrap; }
-    .memory-row img { width: 200px; height: 140px; object-fit: cover; border-radius: .75rem; }
+    .memory-row img { width: 200px; height: 140px; object-fit: cover; border-radius: .75rem; aspect-ratio: 10 / 7; }
     .scroll-left { animation: scrollLeft 40s linear infinite; }
     .scroll-right { animation: scrollRight 40s linear infinite; }
     @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -42,16 +42,23 @@
 
     /* Lightbox tweaks */
     #viewer button { font-size: 20px; line-height: 1; }
-    #stripGrid img { width: 100%; height: 180px; object-fit: cover; border-radius: .75rem; }
+    #stripGrid img { width: 100%; height: 180px; object-fit: cover; border-radius: .75rem; aspect-ratio: 4 / 3; }
     @media (min-width:640px){ #stripGrid img{ height: 200px; } }
     @media (min-width:1024px){ #stripGrid img{ height: 220px; } }
     /* Handwriting & typing effect */
     .handwrite { font-family: 'Dancing Script', cursive; }
     .typing-caret { display:inline-block; width:1px; height:1.1em; background:#0f766e; margin-left:2px; animation: blink 1s steps(2, start) infinite; vertical-align: -0.1em; }
     @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+    /* Performance: only render when visible */
+    #stream, #strip { content-visibility: auto; contain-intrinsic-size: 1000px; }
   </style>
   <!-- Handwriting Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Preload a few above-the-fold images for faster first paint -->
+  <link rel="preload" as="image" href="images/foto1.jpg">
+  <link rel="preload" as="image" href="images/foto2.jpg">
+  <link rel="preload" as="image" href="images/foto3.jpg">
+  <link rel="preload" as="image" href="images/foto4.jpg">
 </head>
 <body class="bg-gray-50 text-slate-800">
 
@@ -166,11 +173,13 @@
     const memoryStream = document.getElementById('memoryStream');
     const stripGrid = document.getElementById('stripGrid');
 
-    const makeImg = (i)=>{
+    const makeImg = (i, {high=false}={})=>{
       const img = document.createElement('img');
       img.src = `images/foto${i}.jpg`;
       img.alt = `Kenangan ${i}`;
       img.loading = 'lazy';
+      img.decoding = 'async';
+      if (high) img.fetchPriority = 'high';
       img.onerror = ()=>{ img.style.opacity = '.35'; };
       return img;
     };
@@ -215,7 +224,10 @@
         const set = [];
         for(let k=0;k<perRow && idx<=TOTAL;k++, idx++) set.push(idx);
         // duplicate set for seamless loop
-        for(let rep=0; rep<2; rep++) for(const n of set){ const im = makeImg(n); addThumbHandler(im,n); row.appendChild(im); }
+        let first = true;
+        for(let rep=0; rep<2; rep++){
+          for(const n of set){ const im = makeImg(n,{high:first}); addThumbHandler(im,n); row.appendChild(im); first=false; }
+        }
         memoryStream.appendChild(row);
       }
     };
@@ -223,14 +235,24 @@
     const buildStripGrid = ()=>{
       stripGrid.innerHTML='';
       const cols = window.innerWidth >= 1024 ? 4 : (window.innerWidth >= 640 ? 3 : 2);
-      for(let i=1;i<=TOTAL;i++){ const wrap=document.createElement('div'); const im=makeImg(i); addThumbHandler(im,i); wrap.appendChild(im); stripGrid.appendChild(wrap);}    
-      const remainder = TOTAL % cols;
-      if(remainder!==0){ const needed = cols - remainder; for(let j=1;j<=needed;j++){ const wrap=document.createElement('div'); const idx=((j-1)%TOTAL)+1; const im=makeImg(idx); addThumbHandler(im,idx); wrap.appendChild(im); stripGrid.appendChild(wrap);} }
+      const firstBatch = Math.min(TOTAL, cols*2); // above-the-fold thumbnails
+      // render first batch with high priority
+      for(let i=1;i<=firstBatch;i++){ const wrap=document.createElement('div'); const im=makeImg(i,{high:true}); addThumbHandler(im,i); wrap.appendChild(im); stripGrid.appendChild(wrap);}    
+      // fill remaining incrementally to keep main thread responsive
+      const appendChunk = (start)=>{
+        const end = Math.min(TOTAL, start+8-1);
+        for(let i=start;i<=end;i++){ const wrap=document.createElement('div'); const im=makeImg(i); addThumbHandler(im,i); wrap.appendChild(im); stripGrid.appendChild(wrap);}    
+        if(end < TOTAL){ requestIdleCallback? requestIdleCallback(()=>appendChunk(end+1)) : setTimeout(()=>appendChunk(end+1),0); }
+      };
+      if(firstBatch < TOTAL) appendChunk(firstBatch+1);
+      // pad last row (run after initial appends)
+      setTimeout(()=>{
+        const remainder = stripGrid.children.length % cols;
+        if(remainder!==0){ const needed = cols - remainder; for(let j=1;j<=needed;j++){ const wrap=document.createElement('div'); const idx=((j-1)%TOTAL)+1; const im=makeImg(idx); addThumbHandler(im,idx); wrap.appendChild(im); stripGrid.appendChild(wrap);} }
+      }, 0);
     };
 
-    // initial build
-    buildStream();
-    buildStripGrid();
+    // (deferred) build after welcome dismissed for faster first paint
 
     // rebuild on resize (debounced)
     let t;
@@ -256,10 +278,20 @@
     }
 
     function revealMain(){
+      // hide welcome
       welcome.style.display='none';
-      document.querySelectorAll('#navbar,#home,#stream,#strip,#story,#message,#quote,#footer').forEach(el=>{ el.classList.remove('hidden'); el.classList.add('fade-in'); });
+      // show main sections
+      document.querySelectorAll('#navbar,#home,#stream,#strip,#story,#message,#quote,#footer')
+        .forEach(el=>{ el.classList.remove('hidden'); el.classList.add('fade-in'); });
+      // build heavy sections lazily
+      requestAnimationFrame(()=>{
+        buildStripGrid();
+        if (window.requestIdleCallback) { requestIdleCallback(buildStream); } else { setTimeout(buildStream, 0); }
+      });
+      // music after user gesture
       bgm && bgm.play && bgm.play().catch(()=>{});
-      if(!typingStarted){ typingStarted = true; setTimeout(()=> typeMessage(MSG), 500); }
+      // start typing once
+      if(!typingStarted){ typingStarted = true; setTimeout(()=> typeMessage(MSG), 300); }
     }
 
     if(enterBtn){
