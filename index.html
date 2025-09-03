@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Haris & Balqis — Our Memories</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --brand1:#ff6b9d; /* pink */
+      --brand2:#ffb347; /* peach/orange */
+      --brand3:#fceabb; /* light yellow */
+    }
+    .brand-grad { background: linear-gradient(135deg, var(--brand1), var(--brand2)); }
+    .love-bg { background: linear-gradient(135deg, var(--brand1), var(--brand2), var(--brand3)); }
+
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
+    .reveal.show { opacity: 1; transform: translateY(0); }
+
+    .marquee { display: flex; gap: 1rem; align-items: center; width: max-content; animation: scroll-left 60s linear infinite; }
+    .marquee:hover { animation-play-state: paused; }
+    .marquee img { height: 180px; width: auto; object-fit: cover; border-radius: 0.75rem; }
+    @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    /* Fullscreen Welcome */
+    #welcome { position: fixed; inset: 0; background: #ffffff; z-index: 100; display: grid; place-items: center; color:white; }
+
+    /* Transitions */
+    .fade-in { animation: fadeIn .6s ease both; }
+    .fade-out { animation: fadeOut .45s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes fadeOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(.98); } }
+
+    /* Stream Memories */
+    .memory-row { display: flex; gap: 1rem; white-space: nowrap; }
+    .memory-row img { width: 200px; height: 140px; object-fit: cover; border-radius: .75rem; }
+    .scroll-left { animation: scrollLeft 40s linear infinite; }
+    .scroll-right { animation: scrollRight 40s linear infinite; }
+    @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    @keyframes scrollRight { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+
+    /* Lightbox tweaks */
+    #viewer button { font-size: 20px; line-height: 1; }
+    #stripGrid img { width: 100%; height: 180px; object-fit: cover; border-radius: .75rem; }
+    @media (min-width:640px){ #stripGrid img{ height: 200px; } }
+    @media (min-width:1024px){ #stripGrid img{ height: 220px; } }
+    /* Handwriting & typing effect */
+    .handwrite { font-family: 'Dancing Script', cursive; }
+    .typing-caret { display:inline-block; width:1px; height:1.1em; background:#0f766e; margin-left:2px; animation: blink 1s steps(2, start) infinite; vertical-align: -0.1em; }
+    @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  </style>
+  <!-- Handwriting Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-slate-800">
+
+  <!-- WELCOME SCREEN -->
+  <div id="welcome" class="text-center p-8">
+    <div class="max-w-xl mx-auto">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-teal-800 mb-3">Welcome to Our Memories</h1>
+      <p class="text-slate-600 mb-6"><span class="font-semibold">Haris & Balqis</span> — potongan waktu, tawa, dan kenangan yang kita rangkai menjadi satu tempat.</p>
+      <p class="text-xs text-slate-500 mb-6">Tekan tombol di bawah untuk melanjutkan.</p>
+      <button id="enterBtn" class="px-6 py-3 rounded-xl bg-teal-700 text-white shadow hover:brightness-110">Masuk</button>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 hidden" id="navbar">
+    <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <span class="font-semibold tracking-wide text-teal-800">Haris & Balqis</span>
+      <ul class="hidden md:flex items-center gap-6 text-sm">
+        <li><a href="#home" class="hover:text-teal-700">Home</a></li>
+        <li><a href="#stream" class="hover:text-teal-700">Stream</a></li>
+        <li><a href="#strip" class="hover:text-teal-700">Memories</a></li>
+        <li><a href="#story" class="hover:text-teal-700">Story</a></li>
+        <li><a href="#quote" class="hover:text-teal-700">Quote</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section id="home" class="text-center py-20 bg-white hidden">
+    <h1 class="text-5xl font-extrabold text-teal-800 reveal">Haris & Balqis</h1>
+    <p class="mt-4 text-lg text-slate-600 reveal">Our memories, forever.</p>
+    <div class="mt-8 max-w-2xl mx-auto">
+      <!-- <h2 class="text-3xl font-bold text-teal-800 mb-6">Pesan untukmu</h2> -->
+      <p class="text-2xl text-slate-700 handwrite leading-relaxed">
+        <span id="messageText"></span><span class="typing-caret"></span>
+      </p>
+    </div>
+  </section>
+
+  <!-- STREAM MEMORIES -->
+  <section id="stream" class="py-14 bg-gray-50 hidden">
+    <h2 class="text-3xl font-bold text-teal-800 mb-8 text-center">Stream Memories</h2>
+    <div class="space-y-6 overflow-hidden" id="memoryStream"></div>
+  </section>
+
+  <!-- STRIP (Static Grid + opens viewer) -->
+  <section id="strip" class="py-14 bg-white border-y border-slate-200 hidden">
+    <div class="max-w-6xl mx-auto px-4">
+      <h3 class="text-2xl font-semibold text-teal-800 mb-6">Memories Gallery</h3>
+      <div id="stripGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+      <p class="mt-3 text-xs text-slate-500">Klik foto untuk melihat layar penuh.</p>
+    </div>
+  </section>
+
+  <!-- STORY -->
+  <section id="story" class="max-w-4xl mx-auto px-4 py-14 hidden">
+    <h2 class="text-3xl font-bold text-teal-800 mb-10 text-center reveal">Cerita Kita</h2>
+    <div class="space-y-8">
+      <article class="reveal"><h4 class="text-teal-700 font-semibold">2023</h4><p class="text-slate-600">Awal dari yg hanya ingin menanyakan tentang pkl setelah lama lost contact akhirnya kita saling balas balas whatsap</p></article>
+      <article class="reveal"><h4 class="text-teal-700 font-semibold">2024</h4><p class="text-slate-600">Memulai untuk terbuka dan mulai menerima, masih memikirkan apakah aku pantas, mulai membagun tujuanku bersama dan apakah ini bukan bercanda pada akhirnya aku menerimanya, lalu Melewati masa pertengkaran, tidak sependapat, egois, ovt.</p></article>
+      <article class="reveal"><h4 class="text-teal-700 font-semibold">2025</h4><p class="text-slate-600">dan akhirnya kita saling menerima mendengarkan dan saling bercerita jika ada hal yg tidak di sukai satu sama lain saling mempertahankan tujuan, dan semoga kita akan bersama terus.</p></article>
+    </div>
+  </section>
+
+  <!-- PERSONAL MESSAGE -->
+  <!-- <section id="message" class="py-16 bg-gray-50 hidden">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold text-teal-800 mb-6">Pesan untukmu</h2>
+      <p class="text-2xl text-slate-700 handwrite leading-relaxed">
+        <span id="messageText"></span><span class="typing-caret"></span>
+      </p>
+    </div> -->
+  </section>
+
+  <!-- QUOTE -->
+  <section id="quote" class="text-center py-16 bg-teal-700 text-white hidden">
+    <blockquote class="text-2xl md:text-3xl italic">“Cinta bukanlah mencari pasangan yang sempurna, tapi menerima pasangan kita dengan sempurna”</blockquote>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 hidden" id="footer">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-slate-500 text-center">
+      © 2025 Haris & Balqis
+    </div>
+  </footer>
+
+  <!-- FULLSCREEN PHOTO VIEWER -->
+  <div id="viewer" class="fixed inset-0 z-[60] hidden">
+    <div id="viewerBg" class="absolute inset-0 bg-black/60 backdrop-blur-md"></div>
+    <button id="viewerClose" class="absolute top-4 right-4 p-2 rounded-full bg-white/90 shadow hover:brightness-110" aria-label="Tutup">✕</button>
+    <button id="viewerPrev" class="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 shadow hover:brightness-110" aria-label="Sebelumnya">‹</button>
+    <button id="viewerNext" class="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 shadow hover:brightness-110" aria-label="Berikutnya">›</button>
+    <div class="relative w-full h-full grid place-items-center pointer-events-none">
+      <img id="viewerImg" class="max-w-[92vw] max-h-[85vh] rounded-xl shadow-2xl pointer-events-auto" src="" alt="Kenangan" />
+    </div>
+  </div>
+
+  <!-- MUSIC -->
+  <audio id="bgm" src="assets/music.mp3" loop preload="auto"></audio>
+
+  <script>
+    // ===== Reveal on scroll =====
+    (function(){
+      const obs = new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); obs.unobserve(e.target);} })
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.reveal').forEach(el=> obs.observe(el));
+    })();
+
+    // ===== Config & helpers =====
+    const TOTAL = 25; // foto1.jpg .. foto25.jpg
+    const memoryStream = document.getElementById('memoryStream');
+    const stripGrid = document.getElementById('stripGrid');
+
+    const makeImg = (i)=>{
+      const img = document.createElement('img');
+      img.src = `images/foto${i}.jpg`;
+      img.alt = `Kenangan ${i}`;
+      img.loading = 'lazy';
+      img.onerror = ()=>{ img.style.opacity = '.35'; };
+      return img;
+    };
+
+    // ===== Lightbox / Fullscreen viewer =====
+    let currentIndex = 1;
+    const viewer = document.getElementById('viewer');
+    const viewerImg = document.getElementById('viewerImg');
+    const btnPrev = document.getElementById('viewerPrev');
+    const btnNext = document.getElementById('viewerNext');
+    const btnClose = document.getElementById('viewerClose');
+    const viewerBg = document.getElementById('viewerBg');
+
+    const show = (i)=>{ if(i<1) i = TOTAL; if(i>TOTAL) i = 1; currentIndex = i; viewerImg.src = `images/foto${i}.jpg`; };
+    const openViewer = (i)=>{ show(i); viewer.classList.remove('hidden'); };
+    const closeViewer = ()=> viewer.classList.add('hidden');
+
+    btnPrev.addEventListener('click', ()=> show(currentIndex-1));
+    btnNext.addEventListener('click', ()=> show(currentIndex+1));
+    btnClose.addEventListener('click', closeViewer);
+    viewerBg.addEventListener('click', closeViewer);
+    window.addEventListener('keydown', (e)=>{
+      if(viewer.classList.contains('hidden')) return;
+      if(e.key==='Escape') closeViewer();
+      if(e.key==='ArrowLeft') show(currentIndex-1);
+      if(e.key==='ArrowRight') show(currentIndex+1);
+    });
+
+    const addThumbHandler = (img, i)=>{ img.style.cursor='zoom-in'; img.addEventListener('click', ()=> openViewer(i)); };
+
+    // ===== Builders =====
+    const getPhotosPerRow = ()=>{ if (window.innerWidth >= 1024) return 6; if (window.innerWidth >= 640) return 4; return 2; };
+
+    const buildStream = ()=>{
+      memoryStream.innerHTML = '';
+      const perRow = getPhotosPerRow();
+      const rows = Math.ceil(TOTAL / perRow);
+      let idx = 1;
+      for(let r=0;r<rows;r++){
+        const row = document.createElement('div');
+        row.className = 'memory-row ' + (r%2===0 ? 'scroll-left' : 'scroll-right');
+        const set = [];
+        for(let k=0;k<perRow && idx<=TOTAL;k++, idx++) set.push(idx);
+        // duplicate set for seamless loop
+        for(let rep=0; rep<2; rep++) for(const n of set){ const im = makeImg(n); addThumbHandler(im,n); row.appendChild(im); }
+        memoryStream.appendChild(row);
+      }
+    };
+
+    const buildStripGrid = ()=>{
+      stripGrid.innerHTML='';
+      const cols = window.innerWidth >= 1024 ? 4 : (window.innerWidth >= 640 ? 3 : 2);
+      for(let i=1;i<=TOTAL;i++){ const wrap=document.createElement('div'); const im=makeImg(i); addThumbHandler(im,i); wrap.appendChild(im); stripGrid.appendChild(wrap);}    
+      const remainder = TOTAL % cols;
+      if(remainder!==0){ const needed = cols - remainder; for(let j=1;j<=needed;j++){ const wrap=document.createElement('div'); const idx=((j-1)%TOTAL)+1; const im=makeImg(idx); addThumbHandler(im,idx); wrap.appendChild(im); stripGrid.appendChild(wrap);} }
+    };
+
+    // initial build
+    buildStream();
+    buildStripGrid();
+
+    // rebuild on resize (debounced)
+    let t;
+    window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(()=>{ buildStream(); buildStripGrid(); }, 200); });
+
+    // ===== Welcome button & music =====
+    const welcome = document.getElementById('welcome');
+    const enterBtn = document.getElementById('enterBtn');
+    const bgm = document.getElementById('bgm');
+
+    // typing effect
+    const MSG = "Sudah banyak cerita yg kita lewati bubub Semoga cerita kita terus berlanjut hingga selamanya.";
+    let typingStarted = false;
+    function typeMessage(text, speed=35){
+      const target = document.getElementById('messageText');
+      if(!target) return;
+      target.textContent = '';
+      let i=0;
+      const tick = ()=>{
+        if(i<=text.length){ target.textContent = text.slice(0,i++); setTimeout(tick, speed); }
+      };
+      tick();
+    }
+
+    function revealMain(){
+      welcome.style.display='none';
+      document.querySelectorAll('#navbar,#home,#stream,#strip,#story,#message,#quote,#footer').forEach(el=>{ el.classList.remove('hidden'); el.classList.add('fade-in'); });
+      bgm && bgm.play && bgm.play().catch(()=>{});
+      if(!typingStarted){ typingStarted = true; setTimeout(()=> typeMessage(MSG), 500); }
+    }
+
+    if(enterBtn){
+      enterBtn.addEventListener('click', ()=>{ welcome.classList.add('fade-out'); setTimeout(revealMain, 450); });
+      enterBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); welcome.classList.add('fade-out'); setTimeout(revealMain, 450);} });
+    }
+  </script>
+</body>
+</html>
